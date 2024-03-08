@@ -1,0 +1,4 @@
+gstreamer/
+venv/
+build/
+.vscode/
