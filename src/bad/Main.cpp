@@ -57,8 +57,6 @@ public:
 
     QWidget* createCentralWidget()
     {
-        // QDockWidget* dock = new QDockWidget(tr("Video"), this);
-
         // Create a new widget to encapsulate the video
         auto w = new QWidget(this);
         auto layout = new QVBoxLayout;
@@ -68,8 +66,6 @@ public:
         if(auto videoWidget = createVideoWidget()) {
             videoWidget->resize(720, 405);
             layout->addWidget(videoWidget);
-            // dock->setWidget(videoWidget);
-            // addDockWidget(Qt::RightDockWidgetArea, dock);
         }
 
         return w;
