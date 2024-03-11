@@ -5,17 +5,13 @@
 #include <QMainWindow>
 #include <QMenu>
 #include <QMenuBar>
-#include <QPushButton>
 #include <QQuickWidget>
-#include <QSplitter>
-#include <QTextEdit>
 #include <QVBoxLayout>
 #include <QtGui>
 #include <QtQml>
 #include <QtQuick>
 
 #include <iostream>
-#include <type_traits>
 
 class SetPlaying : public QRunnable
 {
@@ -61,49 +57,32 @@ public:
 
     QWidget* createCentralWidget()
     {
-        // Create a new widget to encapsulate the video with splitters
+        // QDockWidget* dock = new QDockWidget(tr("Video"), this);
+
+        // Create a new widget to encapsulate the video
         auto w = new QWidget(this);
         auto layout = new QVBoxLayout;
         w->setLayout(layout);
 
-        auto splitter = new QSplitter(Qt::Horizontal);
-        layout->addWidget(splitter);
-
-        // Left Video dock widget
-        auto leftPipeline = createVideoPipeline(_leftVideoFilepath);
-        auto leftVideoWidget = createVideoWidget(leftPipeline);
-        if(leftPipeline && leftVideoWidget) {
-            leftVideoWidget->resize(720, 405);
-            splitter->addWidget(leftVideoWidget);
-            _leftPipeline = leftPipeline;
-        } else {
-            std::cout << "Failed to create left video pipelines + widget" << std::endl;
-        }
-
-        // Right Video dock widget
-        auto rightPipeline = createVideoPipeline(_rightVideoFilepath);
-        auto rightVideoWidget = createVideoWidget(rightPipeline);
-        if(rightPipeline && leftVideoWidget) {
-            rightVideoWidget->resize(720, 405);
-            splitter->addWidget(rightVideoWidget);
-            _rightPipeline = rightPipeline;
-        } else {
-            std::cout << "Failed to create right video pipelines + widget" << std::endl;
+        // Video dock widget
+        if(auto videoWidget = createVideoWidget()) {
+            videoWidget->resize(720, 405);
+            layout->addWidget(videoWidget);
+            // dock->setWidget(videoWidget);
+            // addDockWidget(Qt::RightDockWidgetArea, dock);
         }
 
         return w;
     }
 
-    auto createVideoWidget(GstElement* pipeline) -> QWidget*
+    auto createVideoWidget() -> QWidget*
     {
         // Construct quick widget
         auto qw = new QQuickWidget(this);
         qw->setResizeMode(QQuickWidget::SizeRootObjectToView);
 
-        connect(qw, &QQuickWidget::statusChanged, this, [](QQuickWidget::Status status) {
-            std::cout << std::format(
-                "SbsVideoWidget::quickWidgetStatusChanged: {}\n",
-                static_cast<std::underlying_type_t<QQuickWidget::Status>>(status));
+        connect(qw, &QQuickWidget::statusChanged, this, [](QQuickWidget::Status) {
+            std::cout << std::format("SbsVideoWidget::quickWidgetStatusChanged\n");
         });
         connect(qw,
                 &QQuickWidget::sceneGraphError,
@@ -113,6 +92,17 @@ public:
                                              message.toStdString());
                 });
 
+        auto leftPipeline = createVideoPipeline(_leftVideoFilepath, true);
+        auto rightPipeline = createVideoPipeline(_rightVideoFilepath, false);
+
+        if(!(leftPipeline && rightPipeline)) {
+            std::cout << "Failed to create left + right video pipelines";
+            return nullptr;
+        }
+
+        _leftPipeline = leftPipeline;
+        _rightPipeline = rightPipeline;
+
         // Must set the URL after the pipeline has been parsed/instantiated. Once the pipeline is
         // loaded, GstGLQt6VideoItem will be available inside QML
         const QUrl url(QStringLiteral("qrc:/Video.qml"));
@@ -121,19 +111,26 @@ public:
         // Connect pipeline to QML
         auto rootObject = qw->rootObject();
         if(rootObject) {
-            QQuickItem* videoItem = rootObject->findChild<QQuickItem*>("videoItem");
-            g_assert(videoItem);
-            auto sink = gst_bin_get_by_name(GST_BIN(pipeline), "sink");
-            g_object_set(sink, "widget", videoItem, NULL);
+            QQuickItem* leftVideoItem = rootObject->findChild<QQuickItem*>("leftVideoItem");
+            g_assert(leftVideoItem);
+            auto leftSink = gst_bin_get_by_name(GST_BIN(leftPipeline), "sinkL");
+            g_object_set(leftSink, "widget", leftVideoItem, NULL);
+
+            QQuickItem* rightVideoItem = rootObject->findChild<QQuickItem*>("rightVideoItem");
+            g_assert(rightVideoItem);
+            auto rightSink = gst_bin_get_by_name(GST_BIN(rightPipeline), "sinkR");
+            g_object_set(rightSink, "widget", rightVideoItem, NULL);
         }
 
-        qw->quickWindow()->scheduleRenderJob(new SetPlaying(pipeline),
+        qw->quickWindow()->scheduleRenderJob(new SetPlaying(leftPipeline),
+                                             QQuickWindow::BeforeSynchronizingStage);
+        qw->quickWindow()->scheduleRenderJob(new SetPlaying(rightPipeline),
                                              QQuickWindow::BeforeSynchronizingStage);
 
         return qw;
     }
 
-    auto createVideoPipeline(const std::string& filepath) -> GstElement*
+    auto createVideoPipeline(const std::string& filepath, bool left) -> GstElement*
     {
         // Build the pipeline
         std::stringstream ss;
@@ -145,7 +142,7 @@ public:
         ss << " ! " << "videoconvert";
         ss << " ! " << "queue";
         ss << " ! " << "glupload";
-        ss << " ! " << std::format("qml6glsink name=sink");
+        ss << " ! " << std::format("qml6glsink name={}", left ? "sinkL" : "sinkR");
         // clang-format on
         std::cout << "Pipeline: " << ss.str() << std::endl;
         // clang-format on

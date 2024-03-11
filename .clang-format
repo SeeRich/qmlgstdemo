@@ -1,0 +1,30 @@
+---
+Language: Cpp
+BasedOnStyle: Google
+DerivePointerAlignment: false
+SortIncludes: true
+IndentWidth: 4
+ColumnLimit: 100
+SpaceBeforeParens: Never
+SpacesInSquareBrackets: false
+BinPackArguments: false
+BinPackParameters: false
+AllowAllArgumentsOnNextLine: false
+AllowAllParametersOfDeclarationOnNextLine: false
+AllowShortIfStatementsOnASingleLine: Never
+AccessModifierOffset: -4
+IncludeBlocks: Preserve
+IndentPPDirectives: BeforeHash
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterClass: true
+  AfterEnum: true
+  AfterStruct: true
+  AfterFunction: true
+  AfterControlStatement: false
+  AfterNamespace: false
+  AfterExternBlock: false
+  BeforeCatch: false
+  BeforeElse: false
+  SplitEmptyFunction: false
+  SplitEmptyRecord: false

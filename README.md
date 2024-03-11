@@ -43,5 +43,6 @@ build.bat
 ### Run examples:
 * Double slashes are important on Windows:
 ```
-build\good.exe --filesrc C:\\Users\\Cole\\Downloads\\big_buck_bunny.mp4
+build\good.exe --leftFilesrc C:\\Users\\Cole\\Desktop\\front.mp4 --rightFilesrc C:\\Users\\Cole\\Desktop\\rear.mp4
+build\bad.exe --leftFilesrc C:\\Users\\Cole\\Desktop\\front.mp4 --rightFilesrc C:\\Users\\Cole\\Desktop\\rear.mp4
 ```
