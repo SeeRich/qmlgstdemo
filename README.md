@@ -46,3 +46,6 @@ build.bat
 build\good.exe --leftFilesrc C:\\Users\\Cole\\Desktop\\big_buck_bunny.mp4 --rightFilesrc C:\\Users\\Cole\\Desktop\\big_buck_bunny.mp4
 build\bad.exe --leftFilesrc C:\\Users\\Cole\\Desktop\\big_buck_bunny.mp4 --rightFilesrc C:\\Users\\Cole\\Desktop\\big_buck_bunny.mp4
 ```
+
+### Link to GStreamer Qt6 QML example:
+https://gitlab.freedesktop.org/gstreamer/gstreamer/-/blob/1.22.0/subprojects/gst-plugins-good/tests/examples/qt6/qmlsink/main.qml
